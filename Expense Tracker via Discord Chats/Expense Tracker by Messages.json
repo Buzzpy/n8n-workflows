@@ -1,0 +1,266 @@
+{
+  "name": "Expense Tracker by Messages",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "02ac5311-d523-470c-98c4-c02aea24dd0f",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "guildId": {
+          "__rl": true,
+          "value": "1463588668160741504",
+          "mode": "list",
+          "cachedResultName": "Tally",
+          "cachedResultUrl": "https://discord.com/channels/1463588668160741504"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1463588669536600351",
+          "mode": "list",
+          "cachedResultName": "general",
+          "cachedResultUrl": "https://discord.com/channels/1463588668160741504/1463588669536600351"
+        },
+        "limit": 50,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        192,
+        0
+      ],
+      "id": "69d495a1-6334-41b3-ae86-bf969360a6b4",
+      "name": "Get many messages",
+      "webhookId": "37c23201-61b5-4a95-b586-faac1ab3ed5f",
+      "credentials": {
+        "discordBotApi": {
+          "id": "WHF2CIQHP2dIn5HI",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Access n8n's permanent memory using the $ helper\nconst staticData = $getWorkflowStaticData('global');\n\n// Get the last message ID we processed (or '0' if this is the first run)\nconst lastId = staticData.lastMessageId || '0';\n\n// Handle input items safely\nconst messages = items.map(item => item.json);\nconst newExpenses = [];\nlet maxId = lastId; // Track the newest ID in this batch\n\n// Regex for \"15 Lunch\"\nconst regex = /^(\\d+(?:\\.\\d{1,2})?)\\s+(.+)$/;\n\nfor (const msg of messages) {\n  const id = msg.id;\n  const content = msg.content;\n\n  // 2. The Filter: Compare IDs\n  // If this message ID is smaller/older than our checkpoint, skip it.\n  if (BigInt(id) <= BigInt(lastId)) continue;\n\n  // Keep track of the newest ID we see in this batch\n  if (BigInt(id) > BigInt(maxId)) maxId = id;\n\n  const match = content && content.match(regex);\n  if (match) {\n    newExpenses.push({\n      json: {\n        Date: msg.timestamp,\n        Amount: parseFloat(match[1]),\n        Description: match[2],\n        User: msg.author.username\n      }\n    });\n  }\n}\n\n// 3. Update the memory for tomorrow's run\nstaticData.lastMessageId = maxId;\n\nreturn newExpenses;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        0
+      ],
+      "id": "35b6b54a-4cae-4daa-ae5b-32ee222017a9",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1DNNLLFAlxLzBYkdB4gkPiYoyzpYuyWrBXreMHcJ4Jpk",
+          "mode": "list",
+          "cachedResultName": "Expenses",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DNNLLFAlxLzBYkdB4gkPiYoyzpYuyWrBXreMHcJ4Jpk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DNNLLFAlxLzBYkdB4gkPiYoyzpYuyWrBXreMHcJ4Jpk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "Date": "{{ $json.Date }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Amount",
+              "displayName": "Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "User",
+              "displayName": "User",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        608,
+        0
+      ],
+      "id": "171d2b65-cbcd-40a3-ab11-ae493d4f767a",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "n5RuhvYzgQrawFUz",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let total = 0;\nconst count = items.length;\n\n// Loop through the items that were just written to sheets\nfor (const item of items) {\n  total += item.json.Amount;\n}\n\n// Format the total nicely (e.g., \"45.50\")\nconst totalString = total.toFixed(2);\n\nreturn [\n  {\n    json: {\n      total_spent: totalString,\n      item_count: count\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        816,
+        0
+      ],
+      "id": "762a8605-b7e9-43ba-ac9b-1d993e639b10",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "1463588668160741504",
+          "mode": "list",
+          "cachedResultName": "Tally",
+          "cachedResultUrl": "https://discord.com/channels/1463588668160741504"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1463588669536600351",
+          "mode": "list",
+          "cachedResultName": "general",
+          "cachedResultUrl": "https://discord.com/channels/1463588668160741504/1463588669536600351"
+        },
+        "content": "=📉 **Daily Expense Report**\nYou spent **${{ $json.total_spent }}** today across {{ $json.item_count }} items.\nWorkflow complete.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        0
+      ],
+      "id": "6ec11160-080b-402c-a4d7-10259af4bc78",
+      "name": "Send a message",
+      "webhookId": "d35c2bbc-dfba-46bc-9f13-c17a5f354d84",
+      "credentials": {
+        "discordBotApi": {
+          "id": "WHF2CIQHP2dIn5HI",
+          "name": "Discord Bot account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        []
+      ]
+    },
+    "Get many messages": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "b8422a53-f394-4d10-ba4b-185da3d32730",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ae8d8e706bc0a9a153a1dc3d53a381b9c3052ba315886d468e0aaf8767e67c54"
+  },
+  "id": "8vyEBNTud9-DYSo-Pf9Sk",
+  "tags": []
+}
