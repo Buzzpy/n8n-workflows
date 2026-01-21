@@ -1,9 +1,11 @@
-#### Website Down Monitor - n8n Workflow
+### Website Down Monitor - n8n Workflow
 **The Process:**  
 **Schedule Trigger** (Every 10 mins) → **Ping Website **(HTTP HEAD) → **Check Status** Code (If != 200) → **Send Email Alert.**
 
 **The Output (You get):**  
 A "Dead Man's Switch" for your projects. If your site goes down (404/500 error), you get an email instantly. If it's healthy, the workflow does nothing.  
+
+<img width="1348" height="261" alt="image" src="https://github.com/user-attachments/assets/8b2005d9-6ba4-4772-811b-666a0fbe87b9" />
 
 _Critical note: Some website hosting services, like Cloudflare, have strict gatekeeping processes where the website is not accessible to computers (CAPTCHA). This often results in Status Code 403, which does not mean that the website is down— it's just inaccessible._
 
