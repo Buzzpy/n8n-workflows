@@ -1,4 +1,4 @@
-#### Expense Tracker - n8n Workflow (with Discord)
+### Expense Tracker - n8n Workflow (with Discord)
 **The Process:**  
 **Schedule Trigger** (Daily at Midnight) → **Fetch Messages** from Discord Channel (Batch of 50) → **Filter & Parse** (Javascript + Static Memory) → **Append Rows** to Google Sheet → **Calculate** Totals → **Send Summary** back to Discord.
 
