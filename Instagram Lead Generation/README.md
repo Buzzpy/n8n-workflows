@@ -1,4 +1,4 @@
-#### Instagram Lead Generation - n8n Workflow (with Apify)
+### Instagram Lead Generation - n8n Workflow (with Apify)
 **The Process**:  
 **Run** Apify Instagram Search Scraper OR/AND Apify Instagram Hashtag Scraper → **Collect data** from Apify Instagram Search Scraper OR/AND Apify Instagram Hashtag Scraper → **Filter the data** with JavaScript → **Upload** to a Google Sheet
 
